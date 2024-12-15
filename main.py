@@ -94,10 +94,14 @@ def change_some_data_in_hotels(
 )
 def delete_hotel(hotel_id: int):
 	global hotels
-	hotels = [hotel for hotel in hotels if hotel["id"] != hotel_id]
-	return {"status": "OK"}
+	for hotel in hotels:
+		if hotel["id"] == hotel_id:
+			hotels.remove(hotel)
+			return {"status": "OK"}
 	
-	
+	return {"status": "Hotel not found"}
+
+
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
 	return get_swagger_ui_html(
@@ -113,5 +117,5 @@ if __name__ == "__main__":
 	uvicorn.run("main:app", reload=True)
 
 
-
+# python main.py - запуск удаленного сервера
 	
