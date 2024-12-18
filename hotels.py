@@ -1,5 +1,5 @@
-from fastapi import Query, Body, APIRouter
-from pydantic import BaseModel
+from fastapi import Query, APIRouter
+from schemas.hotels import Hotel, HotelPATCH
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
 
@@ -25,11 +25,6 @@ def get_hotels(
 			continue
 		hotels_.append(hotel)
 	return hotels_
-
-
-class Hotel(BaseModel):
-	title: str
-	name: str
 
 
 @router.post("", description="Добавить в БД новый отель")
@@ -64,24 +59,23 @@ def change_all_data_in_hotels(hotel_id: int, hotel_data: Hotel):
 	"/{hotel_id}",
 	description="Изменить некоторые данные отеля"
 )
-def change_some_data_in_hotels(
-	hotel_id: int,
-	title: str = Body(None),
-	name: str = Body(None)
-):
+def change_some_data_in_hotels(hotel_id: int, hotel_data: HotelPATCH):
 	global hotels
 	
-	for hotel in hotels:
-		if hotel["id"] == hotel_id:
-			if title:
-				hotel["title"] = title
-			if name:
-				hotel["name"] = name
-			break
-	else:
+	hotel = next((hotel for hotel in hotels if hotel["id"] == hotel_id), None)
+	if not hotel:
 		return {"status": "Hotel not found"}
+		
+	updated_data = hotel_data.dict(exclude_unset=True)
+	hotel.update(updated_data)
+	return {"status": "OK", "updated_data": hotel}
 	
-	return {"status": "OK"}
+	# hotel = [hotel for hotel in hotels if hotel["id"] == hotel_id][0]
+	# if hotel_data.title:
+	# 	hotel["title"] = hotel_data.title
+	# if hotel_data.name:
+	# 	hotel["name"] = hotel_data.name
+	# return {"status": "OK"}
 
 
 @router.delete(
@@ -96,3 +90,4 @@ def delete_hotel(hotel_id: int):
 			return {"status": "OK"}
 	
 	return {"status": "Hotel not found"}
+
