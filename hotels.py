@@ -6,6 +6,11 @@ router = APIRouter(prefix="/hotels", tags=["Отели"])
 hotels = [
 	{"id": 1, "title": "Sochi", "name": "sochi"},
 	{"id": 2, "title": "Дубай", "name": "dubai"},
+	{"id": 3, "title": "Мальдивы", "name": "maldivs"},
+	{"id": 4, "title": "Геленджик", "name": "gelik"},
+	{"id": 5, "title": "Москва", "name": "moscow"},
+	{"id": 6, "title": "Казань", "name": "kazan"},
+	{"id": 7, "title": "Гачи", "name": "gachi"},
 ]
 
 
@@ -16,15 +21,28 @@ hotels = [
 def get_hotels(
 	id: int | None = Query(None, description="Айдишник"),
 	title: str | None = Query(None, description="Название отеля"),
+	page: int = Query(1, ge=1, description="Номер страницы (начинается с 1)"),
+	per_page: int = Query(3, ge=1, description="Кол-во отелей на странице")
 ):
-	hotels_ = []
-	for hotel in hotels:
-		if id and hotel["id"] != id:
-			continue
-		if title and hotel["title"] != title:
-			continue
-		hotels_.append(hotel)
-	return hotels_
+	
+	# Фильтрую отели
+	hotels_ = [
+		hotel for hotel in hotels
+		if (not id or hotel["id"] == id) and (not title or hotel["title"] == title)
+	]
+
+	# Реализация пагинации через срезы
+	start = (page - 1) * per_page
+	end = start + per_page
+	paginated_hotels = hotels_[start:end]
+	
+	return {
+		"total": len(hotels_),
+		"page": page,
+		"per_page": per_page,
+		"total_pages": (len(hotels_) + per_page - 1) // per_page,
+		"data": paginated_hotels
+	}
 
 
 @router.post("", description="Добавить в БД новый отель")
