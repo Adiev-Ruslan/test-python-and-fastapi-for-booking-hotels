@@ -1,6 +1,6 @@
-from fastapi import Query, APIRouter, Body, Depends
-from schemas.hotels import Hotel, HotelPATCH
-from dependencies import PaginationDep
+from fastapi import Query, APIRouter, Body
+from src.schemas.hotels import Hotel, HotelPATCH
+from src.api.dependencies import PaginationDep
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
 
@@ -15,15 +15,16 @@ hotels = [
 ]
 
 
-"""@router.get(
+@router.get(
 	"",
 	description="Получить в json-формате список всех отелей"
 )
 def get_hotels(
+	pagination: PaginationDep,
 	id: int | None = Query(None, description="Айдишник"),
 	title: str | None = Query(None, description="Название отеля"),
-	pagination: PaginationDep = Depends()  # Используем зависимость для пагинации
 ):
+	
 	# Фильтруем отели по id и title
 	hotels_ = [
 		hotel for hotel in hotels
@@ -45,8 +46,9 @@ def get_hotels(
 		"total_pages": (len(hotels_) + per_page - 1) // per_page,  # Всего страниц
 		"data": paginated_hotels  # Список отелей на текущей странице
 	}
-"""
 
+
+"""
 @router.get(
 	"",
 	description="Получить в json-формате список всех отелей (либо некоторые из них)"
@@ -68,6 +70,7 @@ def get_hotels(
 	if pagination.page and pagination.per_page:
 		return hotels_[pagination.per_page * (pagination.page-1):][:pagination.per_page]
 	return hotels_
+"""
 
 
 @router.post("", description="Добавить в БД новый отель")
