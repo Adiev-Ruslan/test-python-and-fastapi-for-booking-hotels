@@ -1,5 +1,5 @@
 from fastapi import Query, APIRouter, Body
-from sqlalchemy import insert
+from sqlalchemy import insert, select
 
 from src.database import async_session_maker, engine
 from src.models.hotels import HotelsOrm
@@ -8,48 +8,36 @@ from src.api.dependencies import PaginationDep
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
 
-hotels = [
-	{"id": 1, "title": "Sochi", "name": "sochi"},
-	{"id": 2, "title": "Дубай", "name": "dubai"},
-	{"id": 3, "title": "Мальдивы", "name": "maldivs"},
-	{"id": 4, "title": "Геленджик", "name": "gelik"},
-	{"id": 5, "title": "Москва", "name": "moscow"},
-	{"id": 6, "title": "Казань", "name": "kazan"},
-	{"id": 7, "title": "Гачи", "name": "gachi"},
-]
 
-
-@router.get(
-	"",
-	description="Получить в json-формате список всех отелей"
-)
-def get_hotels(
+@router.get("", description="Получить в json-формате список всех отелей")
+async def get_hotels(
 	pagination: PaginationDep,
 	id: int | None = Query(None, description="Айдишник"),
 	title: str | None = Query(None, description="Название отеля"),
 ):
+	async with async_session_maker() as session:
+		query = select(HotelsOrm)
+		result = await session.execute(query)
+		hotels = result.scalars().all()
+		print(type(hotels), hotels)
+		
+	return hotels
 	
-	# Фильтруем отели по id и title
-	hotels_ = [
-		hotel for hotel in hotels
-		if (not id or hotel["id"] == id) and (not title or hotel["title"] == title)
-	]
-	
-	# Реализация пагинации через срезы
-	page = pagination.page or 1  # Если page не передан, используем значение по умолчанию
-	per_page = pagination.per_page or 3  # Если per_page не передан, используем значение по умолчанию
-	start = (page - 1) * per_page
-	end = start + per_page
-	paginated_hotels = hotels_[start:end]
-	
-	# Возвращаем результат
-	return {
-		"total": len(hotels_),  # Общее количество отелей после фильтрации
-		"page": page,  # Текущая страница
-		"per_page": per_page,  # Количество отелей на странице
-		"total_pages": (len(hotels_) + per_page - 1) // per_page,  # Всего страниц
-		"data": paginated_hotels  # Список отелей на текущей странице
-	}
+	# # Реализация пагинации через срезы
+	# page = pagination.page or 1  # Если page не передан, используем значение по умолчанию
+	# per_page = pagination.per_page or 3  # Если per_page не передан, используем значение по умолчанию
+	# start = (page - 1) * per_page
+	# end = start + per_page
+	# paginated_hotels = hotels_[start:end]
+	#
+	# # Возвращаем результат
+	# return {
+	# 	"total": len(hotels_),  # Общее количество отелей после фильтрации
+	# 	"page": page,  # Текущая страница
+	# 	"per_page": per_page,  # Количество отелей на странице
+	# 	"total_pages": (len(hotels_) + per_page - 1) // per_page,  # Всего страниц
+	# 	"data": paginated_hotels  # Список отелей на текущей странице
+	# }
 
 
 @router.post("", description="Добавить в БД новый отель")
