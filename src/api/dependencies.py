@@ -4,8 +4,8 @@ from typing import Annotated
 
 
 class PaginationParams(BaseModel):
-	page: Annotated[int | None, Query(None, ge=1, description="Номер страницы (начинается с 1)")]
-	per_page: Annotated[int | None, Query(None, ge=1, le=30, description="Кол-во отелей на странице")]
+	page: Annotated[int | None, Query(1, ge=1)]
+	per_page: Annotated[int | None, Query(None, ge=1, le=30)]
 	
 	
 PaginationDep = Annotated[PaginationParams, Depends()]

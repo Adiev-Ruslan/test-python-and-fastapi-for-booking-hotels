@@ -15,31 +15,26 @@ async def get_hotels(
 	id: int | None = Query(None, description="Айдишник"),
 	title: str | None = Query(None, description="Название отеля"),
 ):
+	per_page = pagination.per_page or 5
 	async with async_session_maker() as session:
 		query = select(HotelsOrm)
+		if id:
+			query = query.filter_by(id=id)
+		if title:
+			query = query.filter_by(title=title)
+		query = (
+			query
+			.limit(per_page)
+			.offset(per_page * (pagination.page - 1))
+		)
+		
 		result = await session.execute(query)
 		hotels = result.scalars().all()
-		print(type(hotels), hotels)
+		# print(type(hotels), hotels)
 		
 	return hotels
+
 	
-	# # Реализация пагинации через срезы
-	# page = pagination.page or 1  # Если page не передан, используем значение по умолчанию
-	# per_page = pagination.per_page or 3  # Если per_page не передан, используем значение по умолчанию
-	# start = (page - 1) * per_page
-	# end = start + per_page
-	# paginated_hotels = hotels_[start:end]
-	#
-	# # Возвращаем результат
-	# return {
-	# 	"total": len(hotels_),  # Общее количество отелей после фильтрации
-	# 	"page": page,  # Текущая страница
-	# 	"per_page": per_page,  # Количество отелей на странице
-	# 	"total_pages": (len(hotels_) + per_page - 1) // per_page,  # Всего страниц
-	# 	"data": paginated_hotels  # Список отелей на текущей странице
-	# }
-
-
 @router.post("", description="Добавить в БД новый отель")
 async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
 	"1": {"summary": "Сочи", "value": {
