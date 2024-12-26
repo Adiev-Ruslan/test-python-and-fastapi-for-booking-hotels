@@ -1,5 +1,5 @@
 from fastapi import Query, APIRouter, Body
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, func
 
 from src.database import async_session_maker, engine
 from src.models.hotels import HotelsOrm
@@ -12,29 +12,34 @@ router = APIRouter(prefix="/hotels", tags=["Отели"])
 @router.get("", description="Получить в json-формате список всех отелей")
 async def get_hotels(
 	pagination: PaginationDep,
-	id: int | None = Query(None, description="Айдишник"),
-	title: str | None = Query(None, description="Название отеля"),
+	title: str | None = Query(None, description="Часть названия отеля"),
+	location: str | None = Query(None, description="Часть названия местоположения отеля")
 ):
 	per_page = pagination.per_page or 5
 	async with async_session_maker() as session:
 		query = select(HotelsOrm)
-		if id:
-			query = query.filter_by(id=id)
 		if title:
-			query = query.filter_by(title=title)
-		query = (
+			query = query.filter(HotelsOrm.title.ilike(f"%{title}%"))
+		if location:
+			query = query.filter(HotelsOrm.location.ilike(f"%{location}%"))
+		
+		# Запрос для подсчета общего количества записей
+		count_query = select(func.count()).select_from(query.subquery())
+		total_count_result = await session.execute(count_query)
+		total_count = total_count_result.scalar()
+		
+		# Запрос с пагинацией
+		paginated_query = (
 			query
 			.limit(per_page)
 			.offset(per_page * (pagination.page - 1))
 		)
-		
-		result = await session.execute(query)
+		result = await session.execute(paginated_query)
 		hotels = result.scalars().all()
-		# print(type(hotels), hotels)
 		
-	return hotels
-
+	return {"hotels": hotels, "total_count": total_count}
 	
+
 @router.post("", description="Добавить в БД новый отель")
 async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
 	"1": {"summary": "Сочи", "value": {
