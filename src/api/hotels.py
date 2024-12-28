@@ -1,6 +1,7 @@
 from fastapi import Query, APIRouter, Body
 from sqlalchemy import insert, select, func
 
+from src.repos.hotels import HotelsRepository
 from src.database import async_session_maker, engine
 from src.models.hotels import HotelsOrm
 from src.schemas.hotels import Hotel, HotelPATCH
@@ -15,29 +16,33 @@ async def get_hotels(
 	title: str | None = Query(None, description="Часть названия отеля"),
 	location: str | None = Query(None, description="Часть названия местоположения отеля")
 ):
-	per_page = pagination.per_page or 5
 	async with async_session_maker() as session:
-		query = select(HotelsOrm)
-		if title:
-			query = query.filter(HotelsOrm.title.ilike(f"%{title}%"))
-		if location:
-			query = query.filter(HotelsOrm.location.ilike(f"%{location}%"))
-		
-		# Запрос для подсчета общего количества записей
-		count_query = select(func.count()).select_from(query.subquery())
-		total_count_result = await session.execute(count_query)
-		total_count = total_count_result.scalar()
-		
-		# Запрос с пагинацией
-		paginated_query = (
-			query
-			.limit(per_page)
-			.offset(per_page * (pagination.page - 1))
-		)
-		result = await session.execute(paginated_query)
-		hotels = result.scalars().all()
-		
-	return {"hotels": hotels, "total_count": total_count}
+		return await HotelsRepository(session).get_all()
+	
+	# per_page = pagination.per_page or 5
+	# async with async_session_maker() as session:
+	# 	query = select(HotelsOrm)
+	# 	if title:
+	# 		query = query.filter(HotelsOrm.title.ilike(f"%{title}%"))
+	# 	if location:
+	# 		query = query.filter(HotelsOrm.location.ilike(f"%{location}%"))
+	#
+	# 	# Запрос для подсчета общего количества записей
+	# 	count_query = select(func.count()).select_from(query.subquery())
+	# 	total_count_result = await session.execute(count_query)
+	# 	total_count = total_count_result.scalar()
+	#
+	# 	# Запрос с пагинацией
+	# 	paginated_query = (
+	# 		query
+	# 		.limit(per_page)
+	# 		.offset(per_page * (pagination.page - 1))
+	# 	)
+	# 	print(query.compile(compile_kwargs={"literal_binds": True}))
+	# 	result = await session.execute(paginated_query)
+	# 	hotels = result.scalars().all()
+	#
+	# return {"hotels": hotels, "total_count": total_count}
 	
 
 @router.post("", description="Добавить в БД новый отель")
