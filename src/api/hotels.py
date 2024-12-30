@@ -1,6 +1,7 @@
 from fastapi import Query, APIRouter, Body
 from sqlalchemy import insert
 
+from src.repos.base import BaseRepository
 from src.repos.hotels import HotelsRepository
 from src.database import async_session_maker, engine
 from src.models.hotels import HotelsOrm
@@ -40,21 +41,13 @@ async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
 	return {"status": "OK", "data": hotel}
 
 
-@router.put(
-	"/{hotel_id}",
-	description="Изменить все данные отеля"
-)
-def change_all_data_in_hotels(hotel_id: int, hotel_data: Hotel):
-	global hotels
-	
-	for hotel in hotels:
-		if hotel["id"] == hotel_id:
-			hotel.update(hotel_data)
-			break
-	else:
-		return {"status": "Hotel not found"}
-	
-	return {"status": "OK"}
+@router.put("/{hotel_id}", description="Изменить все данные отеля")
+async def change_all_data_in_hotels(hotel_id: int, hotel_data: Hotel):
+	async with async_session_maker() as session:
+		repo = BaseRepository(session)
+		repo.model = HotelsOrm
+		await repo.edit(data=hotel_data, id=hotel_id)
+		return {"status": "OK"}
 
 
 @router.patch(
@@ -80,16 +73,12 @@ def change_some_data_in_hotels(hotel_id: int, hotel_data: HotelPATCH):
 	# return {"status": "OK"}
 
 
-@router.delete(
-	"/{hotel_id}",
-	description="Удалить отель из БД по его id"
-)
-def delete_hotel(hotel_id: int):
-	global hotels
-	for hotel in hotels:
-		if hotel["id"] == hotel_id:
-			hotels.remove(hotel)
-			return {"status": "OK"}
+@router.delete("/{hotel_id}", description="Удалить отель из БД по его id")
+async def delete_hotel(hotel_id: int):
+	async with async_session_maker() as session:
+		repo = BaseRepository(session)
+		repo.model = HotelsOrm
+		await repo.delete(id=hotel_id)
+		return {"status": "OK"}
 	
-	return {"status": "Hotel not found"}
 
