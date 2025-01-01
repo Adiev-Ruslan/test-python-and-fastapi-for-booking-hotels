@@ -1,9 +1,6 @@
-from pydantic import BaseModel
-
 from fastapi import HTTPException
-
+from pydantic import BaseModel
 from sqlalchemy import select, insert, update, delete
-from sqlalchemy.exc import NoResultFound
 
 
 class BaseRepository:
@@ -27,7 +24,7 @@ class BaseRepository:
 		result = await self.session.execute(add_data_stmt)
 		return result.scalars().one()
 	
-	async def edit(self, data: BaseModel, **filter_by) -> None:
+	async def edit(self, data: BaseModel, exclude_unset: bool = False, **filter_by) -> None:
 		query = (
 			select(self.model)
 			.where(*[getattr(self.model, key) == value for key, value in filter_by.items()])
@@ -40,13 +37,13 @@ class BaseRepository:
 		if len(objects) > 1:
 			raise HTTPException(status_code=422, detail="Ожидается 1 отель")
 		
-		await self.session.execute(
+		update_stmt = (
 			update(self.model)
-			.where(*[getattr(self.model, key) == value for key, value in filter_by.items()])
-			.values(**data.model_dump())
+			.filter_by(**filter_by)
+			.values(**data.model_dump(exclude_unset=exclude_unset))
 		)
-		await self.session.commit()
-	
+		await self.session.execute(update_stmt)
+		
 	async def delete(self, **filter_by) -> None:
 		query = (
 			select(self.model)
@@ -60,8 +57,6 @@ class BaseRepository:
 		if len(objects) > 1:
 			raise HTTPException(status_code=422, detail="Ожидается 1 отель")
 		
-		await self.session.execute(
-			delete(self.model)
-			.where(*[getattr(self.model, key) == value for key, value in filter_by.items()])
-		)
-		await self.session.commit()
+		delete_stmt = delete(self.model).filter_by(**filter_by)
+		await self.session.execute(delete_stmt)
+		
