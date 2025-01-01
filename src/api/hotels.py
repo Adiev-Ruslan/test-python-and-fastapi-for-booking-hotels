@@ -1,4 +1,4 @@
-from fastapi import Query, APIRouter, Body
+from fastapi import Query, APIRouter, Body, HTTPException
 
 from src.repos.hotels import HotelsRepository
 from src.database import async_session_maker
@@ -23,7 +23,19 @@ async def get_hotels(
 			offset=per_page * (pagination.page - 1)
 		)
 	
-	
+
+@router.get(
+	"/{hotel_id}",
+	description="Ручка для получения по id только одного конкретного отеля"
+)
+async def get_hotel(hotel_id: int):
+	async with async_session_maker() as session:
+		hotel = await HotelsRepository(session).get_one_or_none(id=hotel_id)
+		if hotel is None:
+			raise HTTPException(status_code=404, detail="Нет такого отеля")
+		return {"status": "OK", "data": hotel}
+
+
 @router.post("", description="Добавить в БД новый отель")
 async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
 	"1": {"summary": "Сочи", "value": {
