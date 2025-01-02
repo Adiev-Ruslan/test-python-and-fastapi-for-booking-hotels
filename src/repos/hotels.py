@@ -2,10 +2,12 @@ from sqlalchemy import func, select
 
 from src.models.hotels import HotelsOrm
 from src.repos.base import BaseRepository
+from src.schemas.hotels import Hotel
 
 
 class HotelsRepository(BaseRepository):
 	model = HotelsOrm
+	schema = Hotel
 	
 	async def get_all(self, location, title, limit, offset):
 		query = select(HotelsOrm)
@@ -25,8 +27,12 @@ class HotelsRepository(BaseRepository):
 			.limit(limit)
 			.offset(offset)
 		)
+		
 		print(query.compile(compile_kwargs={"literal_binds": True}))
 		result = await self.session.execute(paginated_query)
-		hotels = result.scalars().all()
-	
+		hotels = [
+			Hotel.model_validate(hotel, from_attributes=True)
+			for hotel in result.scalars().all()
+		]
+
 		return {"hotels": hotels, "total_count": total_count}
