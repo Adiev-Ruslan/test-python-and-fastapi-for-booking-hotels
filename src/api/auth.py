@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Response, Request
 
 from src.repos.users import UsersRepository
 from src.database import async_session_maker
@@ -30,4 +30,22 @@ async def login_user(data: UserRequestAdd, response: Response):
 		access_token = AuthService().create_access_token({"user_id": user.id})
 		response.set_cookie("access_token", access_token)
 		return {"access_token": access_token}
+	
+
+@router.get("/only_auth")
+async def only_auth(request: Request):
+	"""
+	Получает access_token из cookies пользователя.
+	Если токен отсутствует, возвращает сообщение об ошибке.
+	"""
+	
+	access_token = request.cookies.get("access_token")
+	if not access_token:
+		raise HTTPException(
+			status_code=401,
+			detail="access-token отсутствует, либо пользователь не вошел(не зарегистрирован)"
+		)
+	
+	return {"access_token": access_token}
+	
 	
