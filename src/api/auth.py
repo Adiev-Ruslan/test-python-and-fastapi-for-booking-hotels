@@ -40,12 +40,6 @@ async def only_auth(request: Request):
 	"""
 	
 	access_token = request.cookies.get("access_token")
-	if not access_token:
-		raise HTTPException(
-			status_code=401,
-			detail="access-token отсутствует, либо пользователь не вошел(не зарегистрирован)"
-		)
-	
-	return {"access_token": access_token}
+	return access_token
 	
 	
