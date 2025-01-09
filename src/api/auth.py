@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, Response, Request
+from fastapi import APIRouter, HTTPException, Response
 
+from src.api.dependencies import UserIdDep
 from src.repos.users import UsersRepository
 from src.database import async_session_maker
 from src.schemas.users import UserRequestAdd, UserAdd
@@ -32,16 +33,13 @@ async def login_user(data: UserRequestAdd, response: Response):
 		return {"access_token": access_token}
 	
 
-@router.get("/only_auth")
-async def only_auth(request: Request):
+@router.get("/me")
+async def get_me(user_id: UserIdDep):
 	"""
 	Получает access_token из cookies пользователя.
 	Если токен отсутствует, возвращает сообщение об ошибке.
 	"""
 	
-	access_token = request.cookies.get("access_token")
-	data = AuthService().decode_token(access_token)
-	user_id = data["user_id"]
 	async with async_session_maker() as session:
 		user = await UsersRepository(session).get_one_or_none(id=user_id)
 		return user
