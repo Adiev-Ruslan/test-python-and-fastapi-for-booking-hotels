@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Response, Request
 
 from src.api.dependencies import UserIdDep
 from src.repos.users import UsersRepository
@@ -31,6 +31,24 @@ async def login_user(data: UserRequestAdd, response: Response):
 		access_token = AuthService().create_access_token({"user_id": user.id})
 		response.set_cookie("access_token", access_token)
 		return {"access_token": access_token}
+	
+	
+@router.delete("/logout")
+async def logout_user(request: Request, response: Response):
+	"""
+	Ручка для выхода из аккаунта
+	"""
+	
+	access_token = request.cookies.get("access_token")
+	
+	if not access_token:
+		raise HTTPException(
+			status_code=400,
+			detail="Пользователь не был залогинен или сессия истекла"
+		)
+	
+	response.delete_cookie("access_token")
+	return {"status": "OK"}
 	
 
 @router.get("/me")
