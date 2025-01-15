@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Body, Query, HTTPException
 
+from src.repos.hotels import HotelsRepository
 from src.repos.rooms import RoomsRepository
 from src.database import async_session_maker
 from src.schemas.rooms import RoomAdd, RoomAddWithHotel
@@ -15,12 +16,15 @@ async def get_rooms(
 	"""Получить список всех номеров отеля с их статусом (свободные/занятые)"""
 	
 	async with async_session_maker() as session:
+		hotels_repo = HotelsRepository(session)
 		rooms_repo = RoomsRepository(session)
-		if hotel_id is None:
-			raise HTTPException(status_code=404, detail="Нет такого отеля в БД")
-		rooms = await rooms_repo.get_by_hotel(hotel_id=hotel_id, status=status)
 		
-	return {"hotel_id": hotel_id, "rooms": rooms}
+		# Проверка существования отеля
+		if not await hotels_repo.exists(hotel_id):
+			raise HTTPException(status_code=404, detail=f"Отель с id {hotel_id} не найден")
+		
+		rooms = await rooms_repo.get_by_hotel(hotel_id=hotel_id, status=status)
+		return {"hotel_id": hotel_id, "rooms": rooms}
 	
 
 @router.get("/hotels/{hotel_id}/{room_id}")
@@ -47,8 +51,12 @@ async def create_room(
 	
 	async with async_session_maker() as session:
 		rooms_repo = RoomsRepository(session)
-		room = await rooms_repo.add(room_data_with_hotel)
-		await session.commit()
+		try:
+			room = await rooms_repo.add(room_data_with_hotel)
+			await session.commit()
+		except HTTPException as e:
+			await session.rollback()
+			raise e
 		return {"status": "OK", "data": room}
 
 

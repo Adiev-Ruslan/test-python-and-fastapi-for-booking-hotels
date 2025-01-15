@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, UniqueConstraint
 
 from src.database import Base
 
@@ -14,4 +14,8 @@ class RoomsOrm(Base):
     room_type: Mapped[str]
     price: Mapped[int]
     quantity: Mapped[int]
+
+    __table_args__ = (
+        UniqueConstraint("hotel_id", "room_num", name="uq_hotel_room"),
+    )
     

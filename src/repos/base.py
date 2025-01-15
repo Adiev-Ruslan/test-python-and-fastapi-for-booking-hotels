@@ -51,6 +51,11 @@ class BaseRepository:
 			.values(**data.model_dump(exclude_unset=exclude_unset))
 		)
 		await self.session.execute(update_stmt)
+	
+	async def exists(self, hotel_id: int) -> bool:
+		query = select(self.model.id).filter_by(id=hotel_id)
+		result = await self.session.execute(query)
+		return result.scalar() is not None
 		
 	async def delete(self, **filter_by) -> None:
 		query = (
