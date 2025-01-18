@@ -1,12 +1,18 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RoomAdd(BaseModel):
 	room_num: int
 	room_type: str
 	price: int
-	quantity: int
 	is_occupied: bool
+	
+
+class RoomPATCH(BaseModel):
+	room_num: int = Field(None)
+	room_type: str = Field(None)
+	price: int = Field(None)
+	is_occupied: bool = Field(None)
 
 
 class RoomAddWithHotel(RoomAdd):

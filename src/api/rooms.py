@@ -3,7 +3,7 @@ from fastapi import APIRouter, Body, Query, HTTPException
 from src.repos.hotels import HotelsRepository
 from src.repos.rooms import RoomsRepository
 from src.database import async_session_maker
-from src.schemas.rooms import RoomAdd, RoomAddWithHotel
+from src.schemas.rooms import RoomAdd, RoomAddWithHotel, RoomPATCH
 
 router = APIRouter(prefix="/rooms", tags=["Номера"])
 
@@ -25,11 +25,37 @@ async def get_rooms(
 		
 		rooms = await rooms_repo.get_by_hotel(hotel_id=hotel_id, status=status)
 		return {"hotel_id": hotel_id, "rooms": rooms}
-	
 
-@router.get("/hotels/{hotel_id}/{room_id}")
+
+@router.get("/room/{room_id}")
 async def get_room(room_id: int):
-	"""Ручка для получения по id только одного конкретного номера отеля"""
+	"""Ручка для получения информации о конкретном номере по его id"""
+	
+	async with async_session_maker() as session:
+		rooms_repo = RoomsRepository(session)
+		hotel_repo = HotelsRepository(session)
+		
+		# Проверяем, что номер существует
+		room = await rooms_repo.get_one_or_none(id=room_id)
+		if room is None:
+			raise HTTPException(
+				status_code=404,
+				detail="Номер не найден"
+			)
+		
+		# Получаем информацию об отеле по hotel_id из записи номера
+		hotel = await hotel_repo.get_one_or_none(id=room.hotel_id)
+		if hotel is None:
+			raise HTTPException(
+				status_code=404,
+				detail="Отель, связанный с номером, не найден"
+			)
+		
+		return {
+			"status": "OK",
+			"hotel_title": hotel.title,  # Название отеля
+			"room_data": room  # Данные о номере
+		}
 
 
 @router.post("/{hotel_id}")
@@ -40,7 +66,6 @@ async def create_room(
 			"room_num": 4,
 			"room_type": "одноместный",
 			"price": 500,
-			"quantity": 30,
 			"is_occupied": False
 		}
 	)
@@ -51,6 +76,12 @@ async def create_room(
 	
 	async with async_session_maker() as session:
 		rooms_repo = RoomsRepository(session)
+		hotels_repo = HotelsRepository(session)
+		
+		# Проверка существования отеля
+		if not await hotels_repo.exists(hotel_id):
+			raise HTTPException(status_code=404, detail=f"Отель с id {hotel_id} не найден")
+		
 		try:
 			room = await rooms_repo.add(room_data_with_hotel)
 			await session.commit()
@@ -60,17 +91,39 @@ async def create_room(
 		return {"status": "OK", "data": room}
 
 
-@router.put("/hotels/{room_id}")
+@router.put("/{room_id}")
 async def change_all_data_in_room(room_id: int, room_data: RoomAdd):
 	"""Изменить все данные номера отеля"""
 	
+	async with async_session_maker() as session:
+		await RoomsRepository(session).edit(room_data, id=room_id)
+		await session.commit()
+	return {"status": "OK"}
 	
-@router.patch("/hotels/{room_id}")
-async def change_some_data_in_room(room_id: int, room_data: RoomAddWithHotel):
+	
+@router.patch("/{room_id}")
+async def change_some_data_in_room(room_id: int, room_data: RoomPATCH):
 	"""Изменить некоторые данные номера"""
 	
+	async with async_session_maker() as session:
+		await RoomsRepository(session).edit(
+			room_data,
+			exclude_unset=True,
+			id=room_id
+		)
+		await session.commit()
+	return {"status": "OK"}
 	
-@router.delete("/hotels/{room_id}")
+	
+@router.delete("/{room_id}")
 async def delete_room(room_id: int):
 	"""Удалить номер отеля из БД по его id"""
+	
+	async with async_session_maker() as session:
+		await RoomsRepository(session).delete(id=room_id)
+		await session.commit()
+		
+	return {"status": "OK"}
+	
+	
 

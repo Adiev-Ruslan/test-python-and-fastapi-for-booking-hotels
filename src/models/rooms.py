@@ -13,8 +13,7 @@ class RoomsOrm(Base):
     room_num: Mapped[int]
     room_type: Mapped[str]
     price: Mapped[int]
-    quantity: Mapped[int]
-
+    
     __table_args__ = (
         UniqueConstraint("hotel_id", "room_num", name="uq_hotel_room"),
     )

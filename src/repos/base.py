@@ -41,7 +41,7 @@ class BaseRepository:
 		objects = result.scalars().all()
 		
 		if not objects:
-			raise HTTPException(status_code=404, detail="Нет такого отеля")
+			raise HTTPException(status_code=404, detail="Нет такого отеля или номера в БД")
 		if len(objects) > 1:
 			raise HTTPException(status_code=422, detail="Ожидается 1 отель")
 		
@@ -66,7 +66,7 @@ class BaseRepository:
 		objects = result.scalars().all()
 		
 		if not objects:
-			raise HTTPException(status_code=404, detail="Нет такого отеля")
+			raise HTTPException(status_code=404, detail="Нет такого отеля или номера в БД")
 		if len(objects) > 1:
 			raise HTTPException(status_code=422, detail="Ожидается 1 отель")
 		
