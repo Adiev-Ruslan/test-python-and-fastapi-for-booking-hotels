@@ -5,10 +5,10 @@ from src.repos.rooms import RoomsRepository
 from src.database import async_session_maker
 from src.schemas.rooms import RoomAdd, RoomAddWithHotel, RoomPATCH
 
-router = APIRouter(prefix="/rooms", tags=["Номера"])
+router = APIRouter(prefix="/hotels", tags=["Номера"])
 
 
-@router.get("/{hotel_id}")
+@router.get("/{hotel_id}/rooms")
 async def get_rooms(
 	hotel_id: int,
 	status: str | None = Query(None, description="available or occupied")
@@ -27,38 +27,34 @@ async def get_rooms(
 		return {"hotel_id": hotel_id, "rooms": rooms}
 
 
-@router.get("/room/{room_id}")
-async def get_room(room_id: int):
+@router.get("/{hotel_id}/rooms/{room_id}")
+async def get_room(hotel_id: int, room_id: int):
 	"""Ручка для получения информации о конкретном номере по его id"""
 	
 	async with async_session_maker() as session:
 		rooms_repo = RoomsRepository(session)
 		hotel_repo = HotelsRepository(session)
 		
-		# Проверяем, что номер существует
-		room = await rooms_repo.get_one_or_none(id=room_id)
-		if room is None:
-			raise HTTPException(
-				status_code=404,
-				detail="Номер не найден"
-			)
-		
-		# Получаем информацию об отеле по hotel_id из записи номера
-		hotel = await hotel_repo.get_one_or_none(id=room.hotel_id)
+		# Проверяю, что отель существует
+		hotel = await hotel_repo.get_one_or_none(id=hotel_id)
 		if hotel is None:
 			raise HTTPException(
 				status_code=404,
-				detail="Отель, связанный с номером, не найден"
+				detail="Отель не найден"
 			)
 		
-		return {
-			"status": "OK",
-			"hotel_title": hotel.title,  # Название отеля
-			"room_data": room  # Данные о номере
-		}
+		# Проверяю существовать ли номер
+		room = await rooms_repo.get_one_or_none(id=room_id, hotel_id=hotel_id)
+		if room is None:
+			raise HTTPException(
+				status_code=404,
+				detail="Номер не найден или не принадлежит указанному отелю"
+			)
+		
+		return {"status": "OK", "hotel_title": hotel.title, "room_data": room}
 
 
-@router.post("/{hotel_id}")
+@router.post("/{hotel_id}/rooms")
 async def create_room(
 	hotel_id: int,
 	room_data: RoomAdd = Body(
@@ -91,36 +87,37 @@ async def create_room(
 		return {"status": "OK", "data": room}
 
 
-@router.put("/{room_id}")
-async def change_all_data_in_room(room_id: int, room_data: RoomAdd):
+@router.put("/{hotel_id}/rooms/{room_id}")
+async def change_all_data_in_room(hotel_id: int, room_id: int, room_data: RoomAdd):
 	"""Изменить все данные номера отеля"""
 	
 	async with async_session_maker() as session:
-		await RoomsRepository(session).edit(room_data, id=room_id)
+		await RoomsRepository(session).edit(room_data, id=room_id, hotel_id=hotel_id)
 		await session.commit()
 	return {"status": "OK"}
 	
 	
-@router.patch("/{room_id}")
-async def change_some_data_in_room(room_id: int, room_data: RoomPATCH):
+@router.patch("/{hotel_id}/rooms/{room_id}")
+async def change_some_data_in_room(hotel_id: int, room_id: int, room_data: RoomPATCH):
 	"""Изменить некоторые данные номера"""
 	
 	async with async_session_maker() as session:
 		await RoomsRepository(session).edit(
 			room_data,
 			exclude_unset=True,
-			id=room_id
+			id=room_id,
+			hotel_id=hotel_id
 		)
 		await session.commit()
 	return {"status": "OK"}
 	
 	
-@router.delete("/{room_id}")
-async def delete_room(room_id: int):
+@router.delete("/{hotel_id}/rooms/{room_id}")
+async def delete_room(hotel_id: int, room_id: int):
 	"""Удалить номер отеля из БД по его id"""
 	
 	async with async_session_maker() as session:
-		await RoomsRepository(session).delete(id=room_id)
+		await RoomsRepository(session).delete(id=room_id, hotel_id=hotel_id)
 		await session.commit()
 		
 	return {"status": "OK"}

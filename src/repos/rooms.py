@@ -28,8 +28,6 @@ class RoomsRepository(BaseRepository):
 	async def edit(self, data: BaseModel, exclude_unset: bool = False, **filter_by) -> None:
 		# Получаем ID номера и ID отеля из фильтров или данных
 		room_id = filter_by.get("id")
-		if room_id is None:
-			raise ValueError("Не указан ID для редактирования номера")
 		
 		# Извлекаем hotel_id из данных
 		hotel_id = data.hotel_id if hasattr(data, "hotel_id") else None

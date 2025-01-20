@@ -42,8 +42,6 @@ class BaseRepository:
 		
 		if not objects:
 			raise HTTPException(status_code=404, detail="Нет такого отеля или номера в БД")
-		if len(objects) > 1:
-			raise HTTPException(status_code=422, detail="Ожидается 1 отель")
 		
 		update_stmt = (
 			update(self.model)
@@ -67,8 +65,6 @@ class BaseRepository:
 		
 		if not objects:
 			raise HTTPException(status_code=404, detail="Нет такого отеля или номера в БД")
-		if len(objects) > 1:
-			raise HTTPException(status_code=422, detail="Ожидается 1 отель")
 		
 		delete_stmt = delete(self.model).filter_by(**filter_by)
 		await self.session.execute(delete_stmt)
