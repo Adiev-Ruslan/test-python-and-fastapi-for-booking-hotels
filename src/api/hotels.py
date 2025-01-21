@@ -1,4 +1,4 @@
-from fastapi import Query, APIRouter, Body
+from fastapi import Query, APIRouter, Body, HTTPException
 
 from src.schemas.hotels import HotelPATCH, HotelAdd
 from src.api.dependencies import PaginationDep, DBDep
@@ -28,8 +28,12 @@ async def get_hotels(
 async def get_hotel(hotel_id: int, db: DBDep):
 	"""Ручка для получения по id только одного конкретного отеля"""
 	
-	return await db.hotels.get_one_or_none(id=hotel_id)
+	hotel = await db.hotels.get_one_or_none(id=hotel_id)
+	if hotel is None:
+		raise HTTPException(status_code=404, detail="Нет такого отеля")
 	
+	return {"status": "OK", "data": hotel}
+		
 	
 @router.post("")
 async def create_hotel(
