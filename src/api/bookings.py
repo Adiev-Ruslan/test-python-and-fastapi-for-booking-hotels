@@ -1,7 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
-from src.models.users import UsersOrm
-from src.api.dependencies import get_current_user_id
 from src.api.dependencies import DBDep, UserIdDep
 from src.schemas.bookings import BookingAddRequest, BookingAdd
 
@@ -16,14 +14,10 @@ async def get_all_bookings(db: DBDep):
 
 
 @router.get("/me")
-async def get_authorized_bookings(
-	db: DBDep,
-	current_user: UsersOrm = Depends(get_current_user_id)
-):
+async def get_authorized_bookings(user_id: UserIdDep, db: DBDep):
 	"""Получить бронирования авторизованного пользователя"""
-	bookings = await db.bookings.get_by_user_id(user_id=current_user.id)
-	return bookings
-
+	return await db.bookings.get_filtered(user_id=user_id)
+	
 
 @router.post("")
 async def create_booking(
