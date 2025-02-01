@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, HTTPException
 
 from src.api.dependencies import DBDep
 from src.schemas.rooms import RoomAdd, RoomAddWithHotel, RoomPATCH
@@ -7,18 +7,14 @@ router = APIRouter(prefix="/hotels", tags=["Номера"])
 
 
 @router.get("/{hotel_id}/rooms")
-async def get_rooms(
-	db: DBDep,
-	hotel_id: int,
-	status: str | None = Query(None, description="available or occupied")
-):
-	"""Получить список всех номеров отеля с их статусом (свободные/занятые)"""
+async def get_rooms(db: DBDep, hotel_id: int):
+	"""Получить список всех номеров отеля"""
 	
 	hotel = await db.hotels.get_one_or_none(id=hotel_id)
 	if hotel is None:
 		raise HTTPException(status_code=404, detail=f"Отель с id {hotel_id} не найден")
 	
-	rooms = await db.rooms.get_by_hotel(hotel_id=hotel_id, status=status)
+	rooms = await db.rooms.get_by_hotel(hotel_id=hotel_id)
 	return {"hotel_id": hotel_id, "rooms": rooms}
 
 

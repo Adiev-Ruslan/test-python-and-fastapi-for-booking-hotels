@@ -9,9 +9,9 @@ class RoomsOrm(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     hotel_id: Mapped[int] = mapped_column(ForeignKey("hotels.id"))
-    is_occupied: Mapped[bool]
     room_num: Mapped[int]
     room_type: Mapped[str]
+    quantity: Mapped[int]
     price: Mapped[int]
     
     __table_args__ = (

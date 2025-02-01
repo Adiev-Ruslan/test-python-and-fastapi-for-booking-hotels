@@ -5,15 +5,15 @@ class RoomAdd(BaseModel):
 	room_num: int
 	room_type: str
 	price: int
-	is_occupied: bool
+	quantity: int
 	
 
 class RoomPATCH(BaseModel):
 	room_num: int = Field(None)
 	room_type: str = Field(None)
 	price: int = Field(None)
-	is_occupied: bool = Field(None)
-
+	quantity: int = Field(None)
+	
 
 class RoomAddWithHotel(RoomAdd):
 	hotel_id: int  # Поле для связки с отелем
