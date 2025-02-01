@@ -7,7 +7,7 @@ router = APIRouter(prefix="/hotels", tags=["Номера"])
 
 
 @router.get("/{hotel_id}/rooms")
-async def get_rooms(db: DBDep, hotel_id: int):
+async def get_all_rooms(db: DBDep, hotel_id: int):
 	"""Получить список всех номеров отеля"""
 	
 	hotel = await db.hotels.get_one_or_none(id=hotel_id)

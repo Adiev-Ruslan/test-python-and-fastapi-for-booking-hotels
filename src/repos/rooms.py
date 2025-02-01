@@ -6,7 +6,7 @@ from src.repos.base import BaseRepository
 from src.schemas.rooms import Room
 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, func
 
 
 class RoomsRepository(BaseRepository):
@@ -59,14 +59,15 @@ class RoomsRepository(BaseRepository):
 	
 	async def get_by_hotel(self, hotel_id: int):
 		query = select(self.model).where(self.model.hotel_id == hotel_id)
-		result = await self.session.execute(query)
-		rooms = result.scalars().all()
 		
-		return [
-			{
-				"id": room.id,
-				"room N": room.room_num,
-			}
-			for room in rooms
+		count_query = select(func.count()).select_from(query.subquery())
+		total_count_result = await self.session.execute(count_query)
+		total_count = total_count_result.scalar()
+		
+		result = await self.session.execute(query)
+		rooms = [
+				Room.model_validate(room, from_attributes=True)
+				for room in result.scalars().all()
 		]
-	
+		
+		return {"rooms": rooms, "total_count": total_count}

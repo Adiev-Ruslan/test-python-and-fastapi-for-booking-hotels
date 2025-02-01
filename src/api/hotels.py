@@ -7,7 +7,7 @@ router = APIRouter(prefix="/hotels", tags=["Отели"])
 
 
 @router.get("")
-async def get_hotels(
+async def get_all_hotels(
 	pagination: PaginationDep,
 	db: DBDep,
 	title: str | None = Query(None, description="Часть названия отеля"),
