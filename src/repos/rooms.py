@@ -1,6 +1,10 @@
+from datetime import date
+
 from pydantic import BaseModel
 from fastapi import HTTPException
 
+from src.database import engine
+from src.models.bookings import BookingsOrm
 from src.models.rooms import RoomsOrm
 from src.repos.base import BaseRepository
 from src.schemas.rooms import Room
@@ -57,17 +61,71 @@ class RoomsRepository(BaseRepository):
 		# Обновляем данные номера
 		await super().edit(data, exclude_unset=exclude_unset, **filter_by)
 	
-	async def get_by_hotel(self, hotel_id: int):
-		query = select(self.model).where(self.model.hotel_id == hotel_id)
+	async def get_filtered_by_time(
+		self,
+		hotel_id: int,
+		date_from: date,
+		date_to: date
+	):
 		
-		count_query = select(func.count()).select_from(query.subquery())
-		total_count_result = await self.session.execute(count_query)
-		total_count = total_count_result.scalar()
+		"""
+		with rooms_count as (
+		select room_id, count(*) as rooms_booked from bookings
+		where date_from <= '2026-11-07' and date_to >= '2024-07-01'
+		group by room_id
+		),
 		
-		result = await self.session.execute(query)
-		rooms = [
-				Room.model_validate(room, from_attributes=True)
-				for room in result.scalars().all()
-		]
+		rooms_left_table as (
+			select rooms.id as room_id, quantity - coalesce(rooms_booked, 0) as rooms_left
+			from rooms
+			left join rooms_count on rooms.id = rooms_count.room_id
+			)
+			
+		select * from rooms_left_table
+		where rooms_left > 0;
+		"""
 		
-		return {"rooms": rooms, "total_count": total_count}
+		"""
+		select room_id, count(*) as rooms_booked from bookings
+		where date_from <= '2026-11-07' and date_to >= '2024-07-01'
+		group by room_id
+		"""
+		rooms_count = (
+			select(BookingsOrm.room_id, func.count("*").label("rooms_booked"))
+			.select_from(BookingsOrm)
+			.filter(
+				BookingsOrm.date_from <= date_to,
+				BookingsOrm.date_to >= date_from
+			)
+			.group_by(BookingsOrm.room_id)
+			.cte(name="rooms_count")
+		)
+		
+		"""
+		rooms_left_table as (
+			select rooms.id as room_id, quantity - coalesce(rooms_booked, 0) as rooms_left
+			from rooms
+			left join rooms_count on rooms.id = rooms_count.room_id
+			)
+		"""
+		rooms_left_table = (
+			select(
+				RoomsOrm.id.label("room_id"),
+				(RoomsOrm.quantity - func.coalesce(rooms_count.c.rooms_booked, 0)).label("rooms_left"),
+			)
+			.select_from(RoomsOrm)
+			.outerjoin(rooms_count, RoomsOrm.id == rooms_count.c.room_id)
+			.cte(name="rooms_left_table")
+		)
+		
+		"""
+		select * from rooms_left_table
+		where rooms_left > 0
+		"""
+		query = (
+			select(rooms_left_table)
+			.select_from(rooms_left_table)
+			.filter(rooms_left_table.c.rooms_left > 0)
+		)
+		
+		print(query.compile(bind=engine, compile_kwargs={"literal_binds": True}))
