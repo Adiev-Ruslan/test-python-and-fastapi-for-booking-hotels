@@ -6,10 +6,11 @@ from fastapi import HTTPException
 from src.models.rooms import RoomsOrm
 from src.repos.base import BaseRepository
 from src.repos.utils import rooms_ids_for_booking
-from src.schemas.rooms import Room
+from src.schemas.rooms import Room, RoomWithRels
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, insert
+from sqlalchemy.orm import selectinload, joinedload
 
 
 class RoomsRepository(BaseRepository):
@@ -62,5 +63,13 @@ class RoomsRepository(BaseRepository):
 	
 	async def get_filtered_by_time(self, hotel_id: int, date_from: date, date_to: date):
 		rooms_ids_to_get = rooms_ids_for_booking(date_from, date_to, hotel_id)
-		return await self.get_filtered(RoomsOrm.id.in_(rooms_ids_to_get))
-		
+		query = (
+			select(self.model)
+			.options(selectinload(self.model.facilities))
+			.filter(RoomsOrm.id.in_(rooms_ids_to_get))
+		)
+		result = await self.session.execute(query)
+		return [
+			RoomWithRels.model_validate(model)
+			for model in result.unique().scalars().all()
+		]
