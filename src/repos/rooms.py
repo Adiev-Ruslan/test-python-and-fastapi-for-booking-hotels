@@ -73,3 +73,18 @@ class RoomsRepository(BaseRepository):
 			RoomWithRels.model_validate(model)
 			for model in result.unique().scalars().all()
 		]
+
+	async def get_room_by_id_with_facilities(self, room_id: int, hotel_id: int):
+		query = (
+			select(self.model)
+			.options(selectinload(self.model.facilities))
+			.filter_by(id=room_id, hotel_id=hotel_id)
+		)
+		result = await self.session.execute(query)
+		room = result.scalars().first()
+		
+		if not room:
+			return None
+		
+		return RoomWithRels.model_validate(room, from_attributes=True)
+		

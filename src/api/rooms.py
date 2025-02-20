@@ -38,7 +38,7 @@ async def get_room(hotel_id: int, room_id: int, db: DBDep):
 		)
 	
 	# Проверяю существовать ли номер
-	room = await db.rooms.get_one_or_none(id=room_id, hotel_id=hotel_id)
+	room = await db.rooms.get_room_by_id_with_facilities(room_id=room_id, hotel_id=hotel_id)
 	if room is None:
 		raise HTTPException(
 			status_code=404,
