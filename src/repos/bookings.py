@@ -3,11 +3,12 @@ from sqlalchemy import select, func
 from src.models.bookings import BookingsOrm
 from src.repos.base import BaseRepository
 from src.schemas.bookings import Booking
+from src.repos.mappers.mappers import BookingDataMapper
 
 
 class BookingsRepository(BaseRepository):
 	model = BookingsOrm
-	schema = Booking
+	mapper = BookingDataMapper
 	
 	async def get_all(self):
 		query = select(self.model)

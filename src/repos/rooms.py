@@ -6,16 +6,16 @@ from fastapi import HTTPException
 from src.models.rooms import RoomsOrm
 from src.repos.base import BaseRepository
 from src.repos.utils import rooms_ids_for_booking
-from src.schemas.rooms import Room, RoomWithRels
+from src.repos.mappers.mappers import RoomDataMapper, RoomDataWithRelsMapper
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, insert
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.orm import selectinload
 
 
 class RoomsRepository(BaseRepository):
 	model = RoomsOrm
-	schema = Room
+	mapper = RoomDataMapper
 	
 	async def add(self, data: BaseModel):
 		try:
@@ -70,7 +70,7 @@ class RoomsRepository(BaseRepository):
 		)
 		result = await self.session.execute(query)
 		return [
-			RoomWithRels.model_validate(model)
+			RoomDataWithRelsMapper.map_to_domain_entity(model)
 			for model in result.unique().scalars().all()
 		]
 
@@ -86,5 +86,5 @@ class RoomsRepository(BaseRepository):
 		if not room:
 			return None
 		
-		return RoomWithRels.model_validate(room, from_attributes=True)
+		return RoomDataWithRelsMapper.map_to_domain_entity(room)
 		
