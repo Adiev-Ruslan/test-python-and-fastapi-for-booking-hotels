@@ -6,12 +6,12 @@ from src.models.rooms import RoomsOrm
 from src.models.hotels import HotelsOrm
 from src.repos.base import BaseRepository
 from src.repos.utils import rooms_ids_for_booking
-from src.schemas.hotels import Hotel
+from src.repos.mappers.mappers import HotelDataMapper
 
 
 class HotelsRepository(BaseRepository):
 	model = HotelsOrm
-	schema = Hotel
+	mapper = HotelDataMapper
 	
 	async def get_filtered_by_time(
 		self,
@@ -44,8 +44,8 @@ class HotelsRepository(BaseRepository):
 		
 		query = query.limit(limit).offset(offset)
 		
-		hotels = await self.session.execute(query)
-		hotels = hotels.scalars().all()
+		result = await self.session.execute(query)
+		hotels = [self.mapper.map_to_domain_entity(hotel) for hotel in result.scalars().all()]
 	
 		return {"total": total_count, "hotels": hotels}
 		
