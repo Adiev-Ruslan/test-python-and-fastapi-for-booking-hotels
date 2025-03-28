@@ -7,6 +7,7 @@ from src.models.rooms import RoomsOrm
 from src.repos.base import BaseRepository
 from src.repos.utils import rooms_ids_for_booking
 from src.repos.mappers.mappers import RoomDataMapper, RoomDataWithRelsMapper
+from src.schemas.rooms import RoomAdd
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, insert
@@ -16,18 +17,7 @@ from sqlalchemy.orm import selectinload
 class RoomsRepository(BaseRepository):
 	model = RoomsOrm
 	mapper = RoomDataMapper
-	
-	async def add(self, data: BaseModel):
-		try:
-			add_data_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
-			result = await self.session.execute(add_data_stmt)
-			model = result.scalars().one()
-			return self.schema.model_validate(model, from_attributes=True)
-		except IntegrityError:
-			raise HTTPException(
-				status_code=400,
-				detail=f"Номер комнаты {data.room_num} уже существует в отеле {data.hotel_id}."
-			)
+	schema = RoomAdd
 	
 	async def edit(self, data: BaseModel, exclude_unset: bool = False, **filter_by) -> None:
 		# Получаем ID номера и ID отеля из фильтров или данных

@@ -7,6 +7,7 @@ from src.repos.mappers.base import DataMapper
 class BaseRepository:
 	model = None
 	mapper: DataMapper = None
+	schema: BaseModel = None
 	
 	def __init__(self, session):
 		self.session = session
@@ -31,7 +32,7 @@ class BaseRepository:
 		add_data_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
 		result = await self.session.execute(add_data_stmt)
 		model = result.scalars().one()
-		return self.mapper.map_to_domain_entity(model)
+		return self.schema.model_validate(model)
 	
 	async def add_bulk(self, data: list[BaseModel]):
 		add_data_stmt = insert(self.model).values([item.model_dump() for item in data])
