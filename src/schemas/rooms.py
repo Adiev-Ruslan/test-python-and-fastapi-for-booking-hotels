@@ -3,8 +3,8 @@ from src.schemas.facilities import Facility
 
 
 class RoomAddRequest(BaseModel):
-	room_num: int
-	room_type: str | None = None
+	title: str
+	description: str | None = None
 	price: int
 	quantity: int
 	facilities_ids: list[int] = []
@@ -12,8 +12,8 @@ class RoomAddRequest(BaseModel):
 	
 class RoomAdd(BaseModel):
 	hotel_id: int
-	room_num: int
-	room_type: str | None = None
+	title: str
+	description: str | None = None
 	price: int
 	quantity: int
 	
@@ -28,8 +28,8 @@ class RoomWithRels(Room):
 
 
 class RoomPatchRequest(BaseModel):
-	room_num: int = Field(None)
-	room_type: str = Field(None)
+	title: str = Field(None)
+	description: str = Field(None)
 	price: int = Field(None)
 	quantity: int = Field(None)
 	facilities_ids: list[int] = []
@@ -37,8 +37,8 @@ class RoomPatchRequest(BaseModel):
 	
 class RoomPatch(BaseModel):
 	hotel_id: int = Field(None)
-	room_num: int = Field(None)
-	room_type: str = Field(None)
+	title: str = Field(None)
+	description: str = Field(None)
 	price: int = Field(None)
 	quantity: int = Field(None)
 	

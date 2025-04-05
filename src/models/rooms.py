@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy import ForeignKey
 
 from src.database import Base
 
@@ -9,8 +9,8 @@ class RoomsOrm(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     hotel_id: Mapped[int] = mapped_column(ForeignKey("hotels.id"))
-    room_num: Mapped[int]
-    room_type: Mapped[str | None]
+    title: Mapped[str]
+    description: Mapped[str | None]
     quantity: Mapped[int]
     price: Mapped[int]
     
@@ -19,7 +19,4 @@ class RoomsOrm(Base):
         secondary="rooms_facilities"
     )
     
-    __table_args__ = (
-        UniqueConstraint("hotel_id", "room_num", name="uq_hotel_room"),
-    )
     

@@ -3,17 +3,19 @@ import os
 import pytest
 import asyncio
 from dotenv import load_dotenv
-from sqlalchemy.ext.asyncio import AsyncSession
+from httpx import AsyncClient, ASGITransport
 
 # Загружаем тестовый .env перед импортом config
 os.environ["MODE"] = "TEST"
 load_dotenv(".env-test")
 
-from httpx import AsyncClient, ASGITransport
 from src.config import settings
-from src.database import Base, engine_null_pool, async_session_maker
+from src.database import Base, engine_null_pool, async_session_maker_null_pool
 from src.models import *
 from src.main import app
+from src.schemas.hotels import HotelAdd
+from src.schemas.rooms import RoomAdd
+from src.utils.db_manager import DBManager
 
 settings.MODE = "TEST"  # Принудительно устанавливаем
 
@@ -29,8 +31,9 @@ def event_loop():
 @pytest.fixture(scope="session", autouse=True)
 def check_test_mode():
 	print(f"DEBUG: settings.MODE = {settings.MODE}")
+	print(f"DEBUG: settings.DB_URL = {settings.DB_URL}")
 	assert settings.MODE == "TEST"
-
+	
 
 @pytest.fixture(scope="session", autouse=True)
 async def setup_database(check_test_mode):
@@ -38,28 +41,20 @@ async def setup_database(check_test_mode):
 		await conn.run_sync(Base.metadata.drop_all)
 		await conn.run_sync(Base.metadata.create_all)
 
-	async with async_session_maker() as session:
-		await insert_mock_data(session)
-
-
-async def insert_mock_data(session: AsyncSession):
-	"""Заполняет тестовую БД мок-данными"""
-	
 	with open("tests/mock_hotels.json", encoding="utf-8") as f:
 		hotels_data = json.load(f)
 		
 	with open("tests/mock_rooms.json", encoding="utf-8") as f:
 		rooms_data = json.load(f)
 		
-	hotels = [HotelsOrm(**hotel) for hotel in hotels_data]
-	session.add_all(hotels)
-	await session.flush()
+	hotels = [HotelAdd.model_validate(hotel) for hotel in hotels_data]
+	rooms = [RoomAdd.model_validate(room) for room in rooms_data]
 	
-	rooms = [RoomsOrm(**room) for room in rooms_data]
-	session.add_all(rooms)
+	async with DBManager(session_factory=async_session_maker_null_pool) as db:
+		await db.hotels.add_bulk(hotels)
+		await db.rooms.add_bulk(rooms)
+		await db.commit()
 	
-	await session.commit()
-
 
 @pytest.fixture(scope="session", autouse=True)
 async def register_user(setup_database):
