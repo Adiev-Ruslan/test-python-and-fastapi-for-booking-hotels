@@ -28,6 +28,21 @@ class BaseRepository:
 			return None
 		return self.mapper.map_to_domain_entity(model)
 	
+	async def update_by_id(self, item_id: int, data: dict):
+		query = select(self.model).where(self.model.id == item_id)
+		result = await self.session.execute(query)
+		obj = result.scalars().first()
+		if not obj:
+			raise HTTPException(status_code=404, detail="Объект не найден")
+		
+		update_stmt = (
+			update(self.model)
+			.where(self.model.id == item_id)
+			.values(**data)
+			.execution_options(synchronize_session="fetch")
+		)
+		await self.session.execute(update_stmt)
+	
 	async def add(self, data: BaseModel):
 		add_data_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
 		result = await self.session.execute(add_data_stmt)
