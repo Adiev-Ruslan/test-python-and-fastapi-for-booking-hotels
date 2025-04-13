@@ -32,6 +32,7 @@ class BaseRepository:
 		query = select(self.model).where(self.model.id == item_id)
 		result = await self.session.execute(query)
 		obj = result.scalars().first()
+		
 		if not obj:
 			raise HTTPException(status_code=404, detail="Объект не найден")
 		
