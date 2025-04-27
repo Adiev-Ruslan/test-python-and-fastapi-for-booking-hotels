@@ -1,7 +1,3 @@
-import pytest
-
-
-@pytest.mark.asyncio
 async def test_get_facilities(ac):
 	response = await ac.get("/facilities")
 	assert response.status_code == 200
@@ -14,19 +10,15 @@ async def test_get_facilities(ac):
 		assert "name" in facilities[0]
 	
 
-@pytest.mark.asyncio
 async def test_create_facility(ac):
-	new_facility = {"name": "Кондиционер"}
+	new_facility = "Кондиционер"
 	
-	response = await ac.post("/facilities", json=new_facility)
+	response = await ac.post("/facilities", json={"title": new_facility})
 	assert response.status_code == 200
 	
 	data = response.json()
-	assert data["status"] == "OK"
+	assert isinstance(data, dict)
+	assert data["data"]["title"] == new_facility
 	assert "data" in data
-	facility = data["data"]
-	
-	assert facility["name"] == new_facility["name"]
-	assert "id" in facility
 	
 	

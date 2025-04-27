@@ -3,6 +3,8 @@ import os
 import pytest
 import asyncio
 from dotenv import load_dotenv
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
 from httpx import AsyncClient, ASGITransport
 
 # Загружаем тестовый .env перед импортом config
@@ -72,6 +74,7 @@ async def setup_database(check_test_mode):
 
 @pytest.fixture(scope="session")
 async def ac() -> AsyncClient:
+	FastAPICache.init(InMemoryBackend())
 	async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
 		yield ac
 		
