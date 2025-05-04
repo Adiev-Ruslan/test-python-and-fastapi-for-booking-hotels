@@ -6,6 +6,7 @@ from src.models.bookings import BookingsOrm
 from src.repos.base import BaseRepository
 from src.schemas.bookings import Booking, BookingAdd
 from src.repos.mappers.mappers import BookingDataMapper
+from src.repos.utils import rooms_ids_for_booking
 
 
 class BookingsRepository(BaseRepository):
@@ -38,25 +39,18 @@ class BookingsRepository(BaseRepository):
 
 		return {"bookings": bookings, "total_count": total_count}
 
-	async def add_booking(self, booking_data: BookingAdd):
-		room = await self.session.get(RoomsOrm, booking_data.room_id)
-		if not room:
-			raise ValueError("Номер не найден")
-
-		query = (
-			select(func.count())
-			.select_from(BookingsOrm)
-			.where(
-				BookingsOrm.room_id == booking_data.room_id,
-				BookingsOrm.date_from <= booking_data.date_to,
-				BookingsOrm.date_to >= booking_data.date_from,
-			)
+	async def add_booking(self, data: BookingAdd, hotel_id: int):
+		rooms_ids_to_get = rooms_ids_for_booking(
+			date_from=data.date_from,
+			date_to=data.date_to,
+			hotel_id=hotel_id
 		)
-		if await self.session.scalar(query) >= 1:
-			raise ValueError("Номер уже забронирован на указанные даты")
 
-		new_booking = BookingsOrm(**booking_data.model_dump())
-		self.session.add(new_booking)
-		await self.session.flush()
-		return Booking.model_validate(new_booking)
-	
+		rooms_ids_to_book_res = await self.session.execute(rooms_ids_to_get)
+		rooms_ids_to_book: list[int] = rooms_ids_to_book_res.scalars().all()
+
+		if data.room_id in rooms_ids_to_book:
+			new_booking = await self.add(data)
+			return new_booking
+		else:
+			raise ValueError("Номер не найден")
