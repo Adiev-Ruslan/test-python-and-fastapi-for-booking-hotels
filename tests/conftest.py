@@ -93,3 +93,19 @@ async def register_user(ac, setup_database):
 			"password": "1234"
 		}
 	)
+
+
+@pytest.fixture
+async def authenticated_ac(ac) -> AsyncClient:
+	login_response = await ac.post(
+		"/auth/login",
+		json={
+			"email": "kot@pes.com",
+			"password": "1234"
+		}
+	)
+
+	assert login_response.status_code == 200
+	assert "access_token" in login_response.json()
+	
+	yield ac
