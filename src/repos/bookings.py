@@ -1,7 +1,7 @@
+from fastapi import HTTPException
 from sqlalchemy import select, func
 from datetime import date
 
-from src.models import RoomsOrm
 from src.models.bookings import BookingsOrm
 from src.repos.base import BaseRepository
 from src.schemas.bookings import Booking, BookingAdd
@@ -53,4 +53,4 @@ class BookingsRepository(BaseRepository):
 			new_booking = await self.add(data)
 			return new_booking
 		else:
-			raise ValueError("Номер не найден")
+			raise HTTPException(500)
