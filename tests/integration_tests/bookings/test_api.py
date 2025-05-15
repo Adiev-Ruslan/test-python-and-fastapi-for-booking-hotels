@@ -1,4 +1,45 @@
 import pytest
+from sqlalchemy import delete
+
+
+@pytest.fixture
+async def clear_bookings(db):
+	await db.session.execute(delete(db.bookings.model))
+	await db.session.commit()
+	yield
+
+
+@pytest.mark.parametrize("room_id, date_from, date_to, expected_count", [
+	(1, "2024-08-01", "2024-08-10", 1),
+    (1, "2024-08-11", "2024-08-15", 1),
+    (1, "2024-08-16", "2024-08-20", 1),
+])
+@pytest.mark.asyncio
+async def test_add_and_get_bookings(
+	room_id, date_from, date_to, expected_count,
+	db, authenticated_ac, clear_bookings
+):
+	initial_response = await authenticated_ac.get("/bookings/me")
+	assert len(initial_response.json()) == 0
+	
+	booking_response = await authenticated_ac.post(
+		"/bookings",
+		json={
+			"room_id": room_id,
+			"date_from": date_from,
+			"date_to": date_to,
+		}
+	)
+	assert booking_response.status_code == 200
+	
+	final_response = await authenticated_ac.get("/bookings/me")
+	bookings = final_response.json()
+	assert len(bookings) == expected_count
+	
+	last_booking = bookings[-1]
+	assert last_booking["room_id"] == room_id
+	assert last_booking["date_from"] == date_from
+	assert last_booking["date_to"] == date_to
 
 
 @pytest.mark.parametrize("room_id, date_from, date_to, status_code", [
