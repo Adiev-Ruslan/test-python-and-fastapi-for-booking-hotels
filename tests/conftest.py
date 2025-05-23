@@ -1,3 +1,5 @@
+# ruff: noqa: E402
+
 from unittest import mock
 mock.patch(
 	"fastapi_cache.decorator.cache", lambda *args, **kwargs: lambda f: f
@@ -19,7 +21,7 @@ load_dotenv(".env-test")
 from src.api.dependencies import get_db
 from src.config import settings
 from src.database import Base, engine_null_pool, async_session_maker_null_pool
-from src.models import *
+from src.models import *		# noqa
 from src.main import app
 from src.schemas.hotels import HotelAdd
 from src.schemas.rooms import RoomAdd

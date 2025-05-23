@@ -5,7 +5,8 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 
-import uvicorn, sys
+import sys
+import uvicorn
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
