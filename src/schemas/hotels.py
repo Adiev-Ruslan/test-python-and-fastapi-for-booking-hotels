@@ -2,14 +2,14 @@ from pydantic import BaseModel, Field
 
 
 class HotelAdd(BaseModel):
-	title: str
-	location: str
+    title: str
+    location: str
 
 
 class Hotel(HotelAdd):
-	id: int
-	
-	
+    id: int
+
+
 class HotelPATCH(BaseModel):
-	title: str = Field(None),
-	location: str = Field(None)
+    title: str = (Field(None),)
+    location: str = Field(None)

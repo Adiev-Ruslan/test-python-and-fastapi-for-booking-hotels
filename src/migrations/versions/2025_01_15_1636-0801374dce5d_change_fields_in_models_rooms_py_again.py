@@ -18,8 +18,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.create_unique_constraint("uq_hotel_room", "rooms", ["hotel_id", "room_num"])
-    
+
 
 def downgrade() -> None:
     op.drop_constraint("uq_hotel_room", "rooms", type_="unique")
-    

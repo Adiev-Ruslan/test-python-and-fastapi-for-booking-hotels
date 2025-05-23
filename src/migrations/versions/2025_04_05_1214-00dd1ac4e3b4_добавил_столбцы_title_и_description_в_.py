@@ -20,27 +20,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "rooms",
-        sa.Column("title", sa.String(), nullable=False)
-    )
-    op.add_column(
-        "rooms",
-        sa.Column("description", sa.String(), nullable=True)
-    )
-    op.drop_constraint(
-        "uq_hotel_room",
-        "rooms",
-        type_="unique"
-    )
-    op.create_unique_constraint(
-        "uq_hotel_room",
-        "rooms",
-        ["hotel_id"]
-    )
+    op.add_column("rooms", sa.Column("title", sa.String(), nullable=False))
+    op.add_column("rooms", sa.Column("description", sa.String(), nullable=True))
+    op.drop_constraint("uq_hotel_room", "rooms", type_="unique")
+    op.create_unique_constraint("uq_hotel_room", "rooms", ["hotel_id"])
     op.drop_column("rooms", "room_num")
     op.drop_column("rooms", "room_type")
-    
+
 
 def downgrade() -> None:
     op.add_column(
@@ -55,4 +41,3 @@ def downgrade() -> None:
     op.create_unique_constraint("uq_hotel_room", "rooms", ["hotel_id", "room_num"])
     op.drop_column("rooms", "description")
     op.drop_column("rooms", "title")
-    

@@ -32,8 +32,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["users.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    
+
 
 def downgrade() -> None:
     op.drop_table("bookings")
-    

@@ -24,16 +24,13 @@ def upgrade() -> None:
     op.add_column("rooms", sa.Column("room_type", sa.String(), nullable=False))
     op.drop_column("rooms", "description")
     op.drop_column("rooms", "title")
-    
+
 
 def downgrade() -> None:
-    op.add_column(
-        "rooms", sa.Column("title", sa.VARCHAR(), autoincrement=False, nullable=False)
-    )
+    op.add_column("rooms", sa.Column("title", sa.VARCHAR(), autoincrement=False, nullable=False))
     op.add_column(
         "rooms",
         sa.Column("description", sa.VARCHAR(), autoincrement=False, nullable=True),
     )
     op.drop_column("rooms", "room_type")
     op.drop_column("rooms", "room_num")
-    

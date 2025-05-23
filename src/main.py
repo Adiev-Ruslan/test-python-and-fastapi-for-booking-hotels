@@ -22,11 +22,11 @@ from src.api.images import router as router_images
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-	await redis_manager.connect()
-	FastAPICache.init(RedisBackend(redis_manager.redis), prefix="fastapi-cache")
-	yield
-	await redis_manager.close()
-	
+    await redis_manager.connect()
+    FastAPICache.init(RedisBackend(redis_manager.redis), prefix="fastapi-cache")
+    yield
+    await redis_manager.close()
+
 
 app = FastAPI(docs_url=None, lifespan=lifespan)
 
@@ -40,16 +40,16 @@ app.include_router(router_images)
 
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
-	return get_swagger_ui_html(
-		openapi_url=app.openapi_url,
-		title=app.title + " - Swagger UI",
-		oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
-		swagger_js_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js",
-		swagger_css_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css",
-	)
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Swagger UI",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        swagger_js_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js",
+        swagger_css_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css",
+    )
 
 
 if __name__ == "__main__":
-	uvicorn.run("main:app", reload=True)
+    uvicorn.run("main:app", reload=True)
 
 # python main.py - запуск удаленного сервера

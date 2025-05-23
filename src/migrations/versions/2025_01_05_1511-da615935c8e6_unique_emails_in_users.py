@@ -18,8 +18,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.create_unique_constraint(None, "users", ["email"])
-    
+
 
 def downgrade() -> None:
     op.drop_constraint(None, "users", type_="unique")
-    

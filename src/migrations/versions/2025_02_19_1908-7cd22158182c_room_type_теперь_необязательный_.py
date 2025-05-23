@@ -21,8 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.alter_column("rooms", "room_type", existing_type=sa.VARCHAR(), nullable=True)
-    
+
 
 def downgrade() -> None:
     op.alter_column("rooms", "room_type", existing_type=sa.VARCHAR(), nullable=False)
-    
