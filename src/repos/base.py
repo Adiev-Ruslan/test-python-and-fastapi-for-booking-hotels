@@ -1,7 +1,9 @@
 from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select, insert, update, delete
+from sqlalchemy.exc import NoResultFound
 from src.repos.mappers.base import DataMapper
+from src.exceptions import ObjectNotFoundException
 
 
 class BaseRepository:
@@ -26,6 +28,15 @@ class BaseRepository:
         model = result.scalars().one_or_none()
         if model is None:
             return None
+        return self.mapper.map_to_domain_entity(model)
+
+    async def get_one(self, **filter_by) -> BaseModel:
+        query = select(self.model).filter_by(**filter_by)
+        result = await self.session.execute(query)
+        try:
+            model = result.scalar_one()
+        except NoResultFound:
+            raise ObjectNotFoundException
         return self.mapper.map_to_domain_entity(model)
 
     async def update_by_id(self, item_id: int, data: dict):
@@ -62,7 +73,7 @@ class BaseRepository:
         objects = result.scalars().all()
 
         if not objects:
-            raise HTTPException(status_code=404, detail="Нет такого отеля или номера в БД")
+            raise HTTPException(status_code=404, detail="Нет такого отеля или номера")
 
         update_stmt = (
             update(self.model)
@@ -79,7 +90,7 @@ class BaseRepository:
         objects = result.scalars().all()
 
         if not objects:
-            raise HTTPException(status_code=404, detail="Нет такого отеля или номера в БД")
+            raise HTTPException(status_code=404, detail="Нет такого отеля или номера")
 
         delete_stmt = delete(self.model).filter_by(**filter_by)
         await self.session.execute(delete_stmt)
