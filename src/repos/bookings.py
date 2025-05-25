@@ -1,4 +1,3 @@
-from fastapi import HTTPException
 from sqlalchemy import select, func
 from datetime import date
 
@@ -7,6 +6,7 @@ from src.repos.base import BaseRepository
 from src.schemas.bookings import Booking, BookingAdd
 from src.repos.mappers.mappers import BookingDataMapper
 from src.repos.utils import rooms_ids_for_booking
+from src.exceptions import AllRoomsAreBookedException
 
 
 class BookingsRepository(BaseRepository):
@@ -45,4 +45,4 @@ class BookingsRepository(BaseRepository):
             new_booking = await self.add(data)
             return new_booking
         else:
-            raise HTTPException(500)
+            raise AllRoomsAreBookedException
