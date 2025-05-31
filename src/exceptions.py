@@ -12,3 +12,8 @@ class ObjectNotFoundException(NabronirovalException):
 class AllRoomsAreBookedException(NabronirovalException):
 	detail = "Не осталось свободных номеров"
 	
+
+class UserAlreadyExistsException(NabronirovalException):
+	status_code = 400
+	detail = "Пользователь с такими данными уже зарегистрирован"
+	

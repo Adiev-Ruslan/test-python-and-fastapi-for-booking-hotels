@@ -25,7 +25,7 @@ async def get_authorized_bookings(user_id: UserIdDep, db: DBDep):
 @router.post("")
 async def create_booking(user_id: UserIdDep, db: DBDep, booking_data: BookingAddRequest):
     """Бронируем номер отеля с проверкой доступности"""
-
+    
     try:
         room: Room = await db.rooms.get_one(id=booking_data.room_id)
     except ObjectNotFoundException:
@@ -38,11 +38,10 @@ async def create_booking(user_id: UserIdDep, db: DBDep, booking_data: BookingAdd
         price=room_price,
         **booking_data.dict()
     )
-	
-	try:
-		booking = await db.bookings.add_booking(_booking_data, hotel_id=hotel.id)
-	except AllRoomsAreBookedException as ex:
-		raise HTTPException(status_code=409, detail=ex.detail)
-	
-	await db.commit()
-	return {"status": "OK", "data": booking}
+    
+    try:
+        booking = await db.bookings.add_booking(_booking_data, hotel_id=hotel.id)
+    except AllRoomsAreBookedException as ex:
+        raise HTTPException(status_code=409, detail=ex.detail)
+    await db.commit()
+    return {"status": "OK", "data": booking}
