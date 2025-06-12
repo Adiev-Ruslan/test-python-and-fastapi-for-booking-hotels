@@ -32,21 +32,6 @@ class RoomsRepository(BaseRepository):
                 raise HTTPException(status_code=404, detail="Номер не найден")
             hotel_id = current_room.hotel_id
 
-        # Проверяем уникальность room_num в рамках hotel_id
-        if hasattr(data, "room_num") and data.room_num is not None:
-            existing_room_query = select(self.model).where(
-                # self.model.room_num == data.room_num,
-                self.model.hotel_id == hotel_id,
-                self.model.id != room_id,  # Исключаем текущий номер
-            )
-            existing_room = (await self.session.execute(existing_room_query)).scalars().first()
-
-            if existing_room:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Такой номер уже существует в рамках этого отеля",
-                )
-
         # Обновляем данные номера
         await super().edit(data, exclude_unset=exclude_unset, **filter_by)
 
