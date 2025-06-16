@@ -15,8 +15,16 @@ class ObjectNotFoundException(NabronirovalException):
 	
 class ObjectAlreadyExistsException(NabronirovalException):
 	detail = "Похожий объект уже существует"
-	
-	
+
+
+class HotelNotFoundException(NabronirovalException):
+	detail = "Отель не найден"
+
+
+class RoomNotFoundException(NabronirovalException):
+	detail = "Номер не найден"
+
+
 class AllRoomsAreBookedException(NabronirovalException):
 	detail = "Не осталось свободных номеров"
 	

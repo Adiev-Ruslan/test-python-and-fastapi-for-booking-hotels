@@ -2,7 +2,9 @@ from datetime import date
 
 from pydantic import BaseModel
 from fastapi import HTTPException
+from sqlalchemy.exc import NoResultFound
 
+from src.exceptions import RoomNotFoundException
 from src.models.rooms import RoomsOrm
 from src.repos.base import BaseRepository
 from src.repos.utils import rooms_ids_for_booking
@@ -61,3 +63,19 @@ class RoomsRepository(BaseRepository):
             return None
 
         return RoomDataWithRelsMapper.map_to_domain_entity(room)
+
+    async def get_one_with_rels(self, **filter_by):
+        query = (
+            select(self.model)
+            .options(selectinload(self.model.facilities))
+            .filter_by(**filter_by)
+        )
+        result = await self.session.execute(query)
+        
+        try:
+            model = result.scalar_one()
+        except NoResultFound:
+            raise RoomNotFoundException
+        
+        return RoomDataWithRelsMapper.map_to_domain_entity(model)
+        
