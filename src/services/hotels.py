@@ -9,22 +9,27 @@ from src.services.base import BaseService
 
 
 class HotelService(BaseService):
-	async def get_filtered_by_time(
+	async def get_hotels(
 		self,
 		pagination,
 		location: str | None,
 		title: str | None,
 		date_from: date,
-		date_to: date
+		date_to: date,
+		only_with_bookings: bool = False
 	):
+		if only_with_bookings:
+			if not date_from or not date_to:
+				raise ValueError("Чтобы фильтровать по броням, нужно указать обе даты")
+			dates_are_fine(date_from, date_to)
 		
-		dates_are_fine(date_from, date_to)
 		per_page = pagination.per_page or 5
-		result = await self.db.hotels.get_filtered_by_time(
+		result = await self.db.hotels.get_all_with_optional_booking_filter(
 			date_from=date_from,
 			date_to=date_to,
 			location=location,
 			title=title,
+			only_with_bookings=only_with_bookings,
 			limit=per_page,
 			offset=per_page * (pagination.page - 1),
 		)

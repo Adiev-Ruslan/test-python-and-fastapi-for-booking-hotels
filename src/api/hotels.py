@@ -21,17 +21,19 @@ async def get_all_hotels(
     db: DBDep,
     location: str | None = Query(None, description="Локация"),
     title: str | None = Query(None, description="Название отеля"),
-    date_from: date = Query(example="2025-01-01"),
-    date_to: date = Query(example="2025-01-30"),
+    date_from: date | None = Query(None, example="2025-05-01"),
+    date_to: date | None = Query(None, example="2025-05-30"),
+    only_with_bookings: bool = Query(False, description="Только отели с бронями?")
 ):
     """Получит список всех гостиниц с датами бронирования"""
     
-    return await HotelService(db).get_filtered_by_time(
+    return await HotelService(db).get_hotels(
         pagination,
         location,
         title,
         date_from,
-        date_to
+        date_to,
+        only_with_bookings
     )
 
 
