@@ -1,14 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
-from src.exceptions import (
-    AllRoomsAreBookedException,
-    ObjectNotFoundException,
-    RoomNotFoundHTTPException
-)
 from src.api.dependencies import DBDep, UserIdDep
-from src.schemas.bookings import BookingAddRequest, BookingAdd
-from src.schemas.hotels import Hotel
-from src.schemas.rooms import Room
+from src.schemas.bookings import BookingAddRequest
+from src.services.bookings import BookingService
 
 router = APIRouter(prefix="/bookings", tags=["Бронирования"])
 
@@ -16,36 +10,23 @@ router = APIRouter(prefix="/bookings", tags=["Бронирования"])
 @router.get("")
 async def get_all_bookings(db: DBDep):
     """Получить все бронирования"""
-    bookings = await db.bookings.get_all()
+    bookings = await BookingService(db).get_all()
     return {"status": "OK", "bookings": bookings}
 
 
 @router.get("/me")
 async def get_authorized_bookings(user_id: UserIdDep, db: DBDep):
     """Получить бронирования авторизованного пользователя"""
-    return await db.bookings.get_filtered(user_id=user_id)
+    bookings = await BookingService(db).get_for_user(user_id)
+    return {"status": "OK", "bookings": bookings}
 
 
 @router.post("")
-async def create_booking(user_id: UserIdDep, db: DBDep, booking_data: BookingAddRequest):
+async def create_booking(
+    user_id: UserIdDep,
+    db: DBDep,
+    booking_data: BookingAddRequest
+):
     """Бронируем номер отеля с проверкой доступности"""
-    
-    try:
-        room: Room = await db.rooms.get_one(id=booking_data.room_id)
-    except ObjectNotFoundException:
-        raise RoomNotFoundHTTPException
-    
-    hotel: Hotel = await db.hotels.get_one(id=room.hotel_id)
-    room_price: int = room.price
-    _booking_data = BookingAdd(
-        user_id=user_id,
-        price=room_price,
-        **booking_data.dict()
-    )
-    
-    try:
-        booking = await db.bookings.add_booking(_booking_data, hotel_id=hotel.id)
-    except AllRoomsAreBookedException as ex:
-        raise HTTPException(status_code=409, detail=ex.detail)
-    await db.commit()
+    booking = await BookingService(db).create_booking(user_id, booking_data)
     return {"status": "OK", "data": booking}
