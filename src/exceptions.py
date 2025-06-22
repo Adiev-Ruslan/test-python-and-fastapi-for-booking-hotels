@@ -34,13 +34,22 @@ class UserAlreadyExistsException(NabronirovalException):
 	detail = "Пользователь с такими данными уже зарегистрирован"
 	
 	
-def dates_are_fine(date_from: date, date_to: date):
-	if date_to <= date_from:
+def dates_are_fine(
+	date_from: date | None,
+	date_to: date | None
+):
+	if (date_from and not date_to) or (date_to and not date_from):
 		raise HTTPException(
 			status_code=422,
-			detail="Дата заезда не может быть позже даты выезда"
+			detail="Чтобы фильтровать по броням, нужно указать обе даты"
 		)
-	
+	if date_from is not None and date_to is not None:
+		if date_to <= date_from:
+			raise HTTPException(
+				status_code=422,
+				detail="Дата заезда не может быть позже даты выезда"
+			)
+		
 	
 class NabronirovalHTTPException(HTTPException):
 	status_code = 500

@@ -18,11 +18,7 @@ class HotelService(BaseService):
 		date_to: date,
 		only_with_bookings: bool = False
 	):
-		if only_with_bookings:
-			if not date_from or not date_to:
-				raise ValueError("Чтобы фильтровать по броням, нужно указать обе даты")
-			dates_are_fine(date_from, date_to)
-		
+		dates_are_fine(date_from, date_to)
 		per_page = pagination.per_page or 5
 		result = await self.db.hotels.get_all_with_optional_booking_filter(
 			date_from=date_from,
